@@ -1,69 +1,94 @@
+<p align="center"><img src="assets/showcase/banner.svg" alt="Rental Statement ETL — engenharia de dados" width="100%"></p>
+
 # Extrator de Demonstrativos de Aluguel
 
-Local document-processing pipeline for structured extraction from digital and scanned rental statement PDFs.
+Aplicação desktop Windows em Python que transforma demonstrativos de aluguel em registros financeiros estruturados, com extração de PDFs digitais e digitalizados, OCR local, validação, rastreabilidade e exportação para Excel.
 
-This small local automation turns a recurring document workflow into validated tabular data. It is presented as an engineering example of ingestion, deterministic parsing, data quality checks, traceability, and export—not as an accounting platform.
+| Versão auditada | Testes automatizados | Build Windows |
+| --- | --- | --- |
+| **0.3.0** | **64/64 aprovados** | **Executável onedir validado** |
 
-## Problem and approach
+Auditoria local de 26/11/2026, na candidata `af9fae8`. Os resultados referem-se a essa revisão; a execução do CI remoto e a distribuição pública do binário são verificações distintas.
 
-Rental statements are semi-structured documents. Their values have meaning only when connected to the correct row and column, so the pipeline uses document structure to extract supported financial events and sends ambiguous or unfamiliar layouts for review.
+## Demonstração
 
-```text
-PDF
- ↓
-Document detection
- ├── Native text extraction
- └── Local OCR fallback for image-only pages
-        ↓
-Structural table parsing
-        ↓
-Deterministic event classification
-        ↓
-Normalization
-        ↓
-Validation and data-quality checks
-        ↓
-Traceable records and duplicate checks
-        ↓
-Structured Excel export + diagnostics
+![Aplicação Windows com processamento concluído](assets/showcase/screenshots/04-resultado.png)
+
+*Captura da janela real do executável 0.3.0, com marca neutra e dados sintéticos.*
+
+<details><summary>Ver demonstração visual (18 segundos)</summary>
+
+![Fluxo da aplicação](assets/showcase/demo/fluxo.gif)
+
+Sequência dos quatro estados capturados durante a demonstração, com pausas para leitura; não representa a duração real do processamento.
+
+</details>
+
+[Janela inicial](assets/showcase/screenshots/01-inicio.png) · [Seleção dos PDFs](assets/showcase/screenshots/02-selecao.png) · [Processamento](assets/showcase/screenshots/03-processamento.png)
+
+## O problema
+
+Demonstrativos semiestruturados contêm valores de naturezas distintas. Extrair apenas os números não é suficiente: é necessário associar cada evento à linha e coluna corretas. O sistema automatiza esse trabalho para uma família específica de documentos de uma página e encaminha estruturas ambíguas para revisão.
+
+## Pipeline ETL
+
+```mermaid
+flowchart TD
+    A[PDFs em lote] --> B[Deduplicação SHA-256]
+    B --> C[Extração de tabelas]
+    C -->|Células com texto| D[Parser estrutural]
+    C -->|Sem texto nas células| E[OCR local Tesseract]
+    E --> D
+    D --> F[Classificação e validação]
+    F -->|Registros válidos| G[Excel e diagnósticos]
+    F -->|Inconsistências| H[Revisão manual]
 ```
 
-## Pipeline capabilities
+O OCR entra quando a extração não encontra texto nas células da tabela. Uma estrutura inválida que contém texto pode seguir diretamente para revisão. O parser utiliza a coluna `Bruto` e o histórico correspondente; não seleciona valores pelo tamanho.
 
-- Batch ingestion of PDFs from a selected folder, with each file isolated so one failure does not stop the rest.
-- Native text extraction first, with local Tesseract OCR as a fallback when a page has no usable text layer.
-- Structural selection of supported event rows and their `Bruto` values; totals, administrative fees, condominium, taxes, payments, and aggregate rows are not treated as the requested events.
-- Explicit, deterministic classification for `ALUGUEL` and `MULTA_CONTRATUAL`. Unknown financial rubrics are reported for review.
-- CPF normalization and validation while preserving the identifier as text, including leading zeroes.
-- Decimal monetary parsing to preserve cents.
-- Multiple supported events from one PDF remain separate output records.
-- SHA-256 duplicate detection suppresses only byte-identical PDFs. Distinct files are preserved.
-- Per-file source traceability, structured diagnostics, and a readable execution log.
-- Excel output with the stable three-column layout `CPF | NOME | VALOR DO ALUGUEL`.
+## Resultado de uma execução real
 
-## Engineering decisions
+Cinco PDFs sintéticos foram processados pelo executável Windows auditado: dois documentos aceitos, três registros, dois itens para revisão e uma cópia binária ignorada.
 
-1. **Values are selected by structure, not magnitude.** The parser associates a supported history row with the value under the `Bruto` column. It does not choose the largest amount or the first monetary token on a page.
-2. **OCR is a fallback.** Text-based PDFs use their native text layer. Local OCR is used when native extraction cannot provide usable text.
-3. **Ambiguity does not create invented data.** Missing identifiers, unknown financial rows, and unsupported layouts become review issues with a file and failure stage.
-4. **Money uses decimal arithmetic.** Values are parsed and validated with decimal types to avoid floating-point cent loss.
-5. **CPF is an identifier, not a number.** It is validated as text and remains text in the workbook so leading zeroes survive.
-6. **Automatic deduplication is conservative.** Only identical file bytes (SHA-256) are automatically treated as a duplicate. Similar CPF/name/value combinations do not discard a distinct document.
-7. **A document can produce several records.** Each supported financial event is retained with its internal category and source PDF.
+| Evento | Valor extraído |
+| --- | ---: |
+| Aluguel — PDF digital | R$ 321,45 |
+| Multa contratual — PDF digital | R$ 12,34 |
+| Aluguel — OCR | R$ 432,10 |
+| **Total demonstrativo** | **R$ 765,89** |
 
-## Project structure
+O total é a soma ilustrativa dos registros, não uma linha adicional exportada. Taxa administrativa, condomínio e totais não foram tratados como eventos suportados. A planilha mantém `CPF | NOME | VALOR DO ALUGUEL`, com CPFs como texto e valores monetários numéricos.
+
+## Engenharia e arquitetura
+
+- Processamento isolado por arquivo, com diagnósticos de inconsistências.
+- Classificação determinística de `ALUGUEL` e `MULTA_CONTRATUAL`.
+- Normalização e validação de CPF, preservando zeros iniciais.
+- Aritmética decimal e seleção de valores por estrutura documental.
+- Deduplicação conservadora: apenas arquivos com bytes idênticos são descartados.
+- Rastreabilidade por PDF e exportação para Excel com diagnóstico separado.
+- Interface modular com tema, widgets, recursos, modelo de apresentação, threads e fila de atualização da GUI.
+
+[Arquitetura](docs/showcase/ARQUITETURA.md) · [Pipeline detalhado](docs/showcase/PIPELINE.md) · [Validação e limitações](docs/showcase/VALIDACAO.md)
+
+## Tecnologias
+
+Python 3.12 · Tkinter/ttk · pdfplumber · pdfminer.six · pypdfium2 · Tesseract OCR · Pillow · openpyxl · unittest · PyInstaller · GitHub Actions
+
+## Estrutura do projeto
 
 ```text
-alugueis_extrator/   PDF reading, parsing, classification, validation, batch service, Excel and diagnostics
-tests/               Synthetic unit and integration tests; no private document corpus
-docs/                Architecture and project notes
-build.ps1            Windows onedir packaging script
-ExtratorAlugueis.spec PyInstaller GUI build configuration
+alugueis_extrator/    núcleo ETL, validação, exportação, GUI e diagnósticos
+alugueis_extrator/ui/ tema, widgets e recursos visuais
+tests/                testes sintéticos
+docs/                 documentação técnica
+build.ps1             empacotamento Windows
+ExtratorAlugueis.spec configuração PyInstaller
 ```
 
-## Run locally
+## Executar localmente
 
-The application targets Windows and Python 3.12. It uses Tkinter for the desktop interface. For development:
+No Windows, com Python 3.12:
 
 ```powershell
 py -3.12 -m venv .venv
@@ -72,39 +97,22 @@ py -3.12 -m venv .venv
 .\.venv\Scripts\python.exe run_desktop.py
 ```
 
-To use local OCR while running from source, provision a compatible Tesseract distribution and Portuguese trained data at `vendor\tesseract\` as described in [DEVELOPMENT.md](DEVELOPMENT.md). The public source repository intentionally does not contain OCR binaries or language data.
+Para executar OCR a partir do código-fonte, providencie uma distribuição compatível do Tesseract e os dados de idioma indicados em [DEVELOPMENT.md](DEVELOPMENT.md). O repositório público não inclui os binários do OCR.
 
-## Windows build
-
-On Windows, with Python 3.12 and the local OCR runtime provisioned, run:
+Para gerar o pacote Windows, com as dependências provisionadas:
 
 ```powershell
 .\build.ps1
 ```
 
-The script creates an onedir GUI distribution in `dist\ExtratorAlugueis\`. The executable and its `_internal` directory must be kept together. The build includes local OCR runtime files when they have been provisioned; it does not require Microsoft Excel.
+A distribuição onedir mantém o executável e a pasta `_internal` juntos. Consulte [DEVELOPMENT.md](DEVELOPMENT.md) e [THIRD_PARTY_NOTICES.txt](THIRD_PARTY_NOTICES.txt) para detalhes de execução e dependências.
 
-## Tests and validation
+## Validação, privacidade e escopo
 
-The public suite creates synthetic PDFs and OCR word coordinates at test time. It covers digital PDF parsing, OCR structural parsing, both supported categories, multiple events, administrative-row exclusion, CPF validation and leading zeroes, cents, corrupt or unfamiliar input, duplicate handling, diagnostics, and GUI-facing service behavior. CI runs these tests on Windows without private data or an installed Tesseract process; OCR subprocess behavior is tested with a controlled synthetic process result.
+A candidata 0.3.0 passou em 64 testes locais, incluindo 20 novos casos relacionados à interface, integração e DPI simulado. A comparação com a 0.2.4 confirmou os mesmos dados, tipos e formatos de Excel para os cinco PDFs sintéticos. A validação histórica em 51 documentos reais não foi repetida nesta auditoria e seu corpus permanece privado.
 
-During internal development, the application was also validated against 51 real documents across three historical monthly batches. That corpus is private, is not included here, and is not needed to run or test this public project. The public tests use synthetic fixtures only.
+O processamento ocorre localmente, sem API externa ou LLM em tempo de execução. O suporte é limitado aos layouts e eventos explicitamente implementados em PDFs de uma página. O projeto não é um sistema contábil completo nem um extrator universal. Não há licença de projeto atribuída por este repositório.
 
-## Scope and privacy
+---
 
-- This is a local workflow tool for one document family, not a general-purpose PDF extraction framework.
-- Documents are processed locally; the application does not send them to external APIs and has no LLM dependency at runtime.
-- OCR runs locally when needed.
-- No real statements, spreadsheets, names, or CPF values from the internal validation corpus are included in this repository.
-- New layouts and unsupported financial events may require an explicit parser rule and synthetic regression test before they can be processed automatically.
-- The project has no license file; no project license is being assigned by this repository.
-
-## Limitations
-
-Parsing depends on the supported statement table structure and labels. Scans with poor image quality, missing table headings, or unfamiliar layouts may require review. The supported principal categories are explicit and intentionally limited; the parser does not infer new categories.
-
-## Interface 0.3.0
-
-A interface desktop usa cartões responsivos, estados de processamento e revisão, avisos separados e ações para abrir o diagnóstico ou iniciar outro relatório. A edição pública inclui uma marca neutra. O pipeline de extração e o formato do Excel são os mesmos da edição pública anterior.
-
-O OCR é acionado quando a extração nativa não retorna texto nas células das tabelas. Uma tabela reconhecida com campos inválidos pode seguir diretamente para revisão.
+Desenvolvido por [Guilherme Sampaio](https://github.com/gsampaio-dev).
