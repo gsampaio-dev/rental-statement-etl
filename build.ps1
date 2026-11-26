@@ -78,10 +78,17 @@ try {
         throw "A distribuição não contém o executável e os dados de OCR locais."
     }
     Copy-Item -LiteralPath $notices -Destination $releaseDir -Force
+    $releaseLogo = Join-Path $releaseDir "_internal\alugueis_extrator\ui\assets\product_logo.png"
+    $sourceLogo = Join-Path $projectRoot "alugueis_extrator\ui\assets\product_logo.png"
+    if (-not (Test-Path -LiteralPath $releaseLogo) -or
+        (Get-FileHash -LiteralPath $releaseLogo -Algorithm SHA256).Hash -ne
+        (Get-FileHash -LiteralPath $sourceLogo -Algorithm SHA256).Hash) {
+        throw "A marca do projeto está ausente ou divergente na distribuição."
+    }
 
     $artifactDir = Join-Path $projectRoot "artifacts"
     New-Item -ItemType Directory -Force -Path $artifactDir | Out-Null
-    $archivePath = Join-Path $artifactDir "ExtratorAlugueis_Windows_0.2.4.zip"
+    $archivePath = Join-Path $artifactDir "ExtratorAlugueis_Windows_0.3.0.zip"
     Compress-Archive -Path $releaseDir -DestinationPath $archivePath -CompressionLevel Optimal -Force
     Write-Host "Release criada em: $releaseDir"
     Write-Host "Pacote ZIP criado em: $archivePath"

@@ -10,7 +10,10 @@ a = Analysis(
     ["run_desktop.py"],
     pathex=[SPECPATH],
     binaries=[],
-    datas=[(str(ocr_runtime), "ocr")],
+    datas=[
+        (str(ocr_runtime), "ocr"),
+        (str(project_root / "alugueis_extrator" / "ui" / "assets"), "alugueis_extrator/ui/assets"),
+    ],
     hiddenimports=[],
     hookspath=[],
     hooksconfig={},

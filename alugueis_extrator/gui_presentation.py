@@ -1,5 +1,7 @@
 """Human-readable result text for the GUI, kept outside the batch parser."""
 
+from dataclasses import dataclass
+
 from .models import BatchReport, ProcessingIssue, ProcessingWarning
 
 
@@ -47,3 +49,63 @@ def result_details(report: BatchReport) -> str:
     for warning in report.warnings:
         lines.extend((warning.file, friendly_warning(warning), ""))
     return "\n".join(lines).strip()
+
+
+def _counted(count: int, singular: str, plural: str) -> tuple[str, str]:
+    return str(count), singular if count == 1 else plural
+
+
+@dataclass(frozen=True)
+class ResultView:
+    """Read-only view of a finished batch for the result cards of the GUI."""
+
+    needs_review: bool
+    title: str
+    metrics: tuple[tuple[str, str], ...]
+    review_items: tuple[tuple[str, str], ...]
+    warning_items: tuple[tuple[str, str], ...]
+    output_name: str
+
+
+def result_view(report: BatchReport) -> ResultView:
+    """Group the report numbers exactly as produced by the batch core.
+
+    "erros" mirrors the former "Falhas técnicas do lote: 0": a technical
+    failure of the batch never yields a report (the GUI shows an error state
+    instead), while documents that could not be read or validated are listed
+    for review, as decided by the core.
+    """
+
+    needs_review = report.review_count > 0
+    if needs_review:
+        title = "Processamento concluído com itens para revisão"
+        metrics = (
+            _counted(
+                report.processed,
+                "documento processado com sucesso",
+                "documentos processados com sucesso",
+            ),
+            _counted(report.records_generated, "registro gerado", "registros gerados"),
+            _counted(
+                report.review_count, "documento requer revisão", "documentos requerem revisão"
+            ),
+            ("0", "erros"),
+        )
+    else:
+        title = "Processamento concluído"
+        metrics = (
+            _counted(report.processed, "documento processado", "documentos processados"),
+            _counted(report.records_generated, "registro gerado", "registros gerados"),
+            _counted(report.review_count, "documento para revisão", "documentos para revisão"),
+            ("0", "erros"),
+        )
+    return ResultView(
+        needs_review=needs_review,
+        title=title,
+        metrics=metrics,
+        review_items=tuple((issue.file, friendly_issue(issue)) for issue in report.errors),
+        warning_items=tuple(
+            (warning.file, friendly_warning(warning)) for warning in report.warnings
+        ),
+        output_name=report.output_path.name,
+    )

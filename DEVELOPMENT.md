@@ -37,3 +37,5 @@ The build script validates the OCR file manifest, installs pinned dependencies, 
 - `application_service.py` and `gui.py`: GUI-facing service and Tkinter interface.
 
 The runtime package does not read the test directory or use a reference workbook. New behavior should be covered by synthetic tests in `tests/`.
+
+A distribuição 0.3.0 inclui o asset neutro em alugueis_extrator/ui/assets. O script de build confere o SHA-256 entre a imagem de origem e a cópia no diretório interno. Os testes da interface exercitam Tk, incluindo estados e redimensionamento.

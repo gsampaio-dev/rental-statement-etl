@@ -102,3 +102,9 @@ During internal development, the application was also validated against 51 real 
 ## Limitations
 
 Parsing depends on the supported statement table structure and labels. Scans with poor image quality, missing table headings, or unfamiliar layouts may require review. The supported principal categories are explicit and intentionally limited; the parser does not infer new categories.
+
+## Interface 0.3.0
+
+A interface desktop usa cartões responsivos, estados de processamento e revisão, avisos separados e ações para abrir o diagnóstico ou iniciar outro relatório. A edição pública inclui uma marca neutra. O pipeline de extração e o formato do Excel são os mesmos da edição pública anterior.
+
+O OCR é acionado quando a extração nativa não retorna texto nas células das tabelas. Uma tabela reconhecida com campos inválidos pode seguir diretamente para revisão.
