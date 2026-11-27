@@ -2,7 +2,7 @@
 
 # Extrator de Demonstrativos de Aluguel
 
-Aplicação desktop Windows em Python que transforma demonstrativos de aluguel em registros financeiros estruturados, com extração de PDFs digitais e digitalizados, OCR local, validação, rastreabilidade e exportação para Excel.
+Desenvolvi esta aplicação desktop Windows em Python para transformar demonstrativos de aluguel em registros financeiros estruturados, com extração de PDFs digitais e digitalizados, OCR local, validação, rastreabilidade e exportação para Excel.
 
 | Versão auditada | Testes automatizados | Build Windows |
 | --- | --- | --- |
@@ -48,7 +48,7 @@ O OCR entra quando a extração não encontra texto nas células da tabela. Uma 
 
 ## Resultado de uma execução real
 
-Cinco PDFs sintéticos foram processados pelo executável Windows auditado: dois documentos aceitos, três registros, dois itens para revisão e uma cópia binária ignorada.
+No ensaio com o executável Windows, processei cinco PDFs sintéticos: dois documentos aceitos, três registros, dois itens para revisão e uma cópia binária ignorada.
 
 | Evento | Valor extraído |
 | --- | ---: |
@@ -109,9 +109,9 @@ A distribuição onedir mantém o executável e a pasta `_internal` juntos. Cons
 
 ## Validação, privacidade e escopo
 
-A candidata 0.3.0 passou em 64 testes locais, incluindo 20 novos casos relacionados à interface, integração e DPI simulado. A comparação com a 0.2.4 confirmou os mesmos dados, tipos e formatos de Excel para os cinco PDFs sintéticos. A validação histórica em 51 documentos reais não foi repetida nesta auditoria e seu corpus permanece privado.
+A candidata 0.3.0 passou em 64 testes locais, incluindo 20 novos casos relacionados à interface, integração e DPI simulado. A comparação com a 0.2.4 confirmou os mesmos dados, tipos e formatos de Excel para os cinco PDFs sintéticos. Não repeti a validação histórica em 51 documentos reais nesta auditoria e mantenho esses documentos privados.
 
-O processamento ocorre localmente, sem API externa ou LLM em tempo de execução. O suporte é limitado aos layouts e eventos explicitamente implementados em PDFs de uma página. O projeto não é um sistema contábil completo nem um extrator universal. Não há licença de projeto atribuída por este repositório.
+O processamento ocorre localmente, sem API externa ou LLM em tempo de execução. O suporte é limitado aos layouts e eventos explicitamente implementados em PDFs de uma página. Desenvolvi a ferramenta para esse conjunto de documentos, não como sistema contábil completo ou extrator universal. Ainda não atribuí uma licença ao projeto.
 
 ---
 
